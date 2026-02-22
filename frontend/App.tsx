@@ -7,7 +7,8 @@ import {
   Trash2, 
   PlusCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  History
 } from 'lucide-react';
 import { IncomeVerification, Transaction } from './types';
 import { analyzeIncome } from './services/geminiService';
@@ -26,7 +27,7 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('income_verifications');
+    const saved = localStorage.getItem('income_verifications_v2');
     if (saved) {
       try {
         setVerifications(JSON.parse(saved));
@@ -37,7 +38,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('income_verifications', JSON.stringify(verifications));
+    localStorage.setItem('income_verifications_v2', JSON.stringify(verifications));
   }, [verifications]);
 
   const handleAnalyze = async (data: { text: string, clientName: string, fatherName?: string, motherName?: string }) => {
@@ -74,7 +75,7 @@ const App: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Deseja realmente excluir este registro?")) {
+    if (confirm("Deseja realmente excluir este registro permanentemente?")) {
       setVerifications(prev => prev.filter(v => v.id !== id));
       if (currentVerification?.id === id) setCurrentVerification(null);
     }
@@ -88,9 +89,11 @@ const App: React.FC = () => {
       const month = { ...newMonthlyData[monthIndex] };
       month.transactions = month.transactions.map(t => t.id === transactionId ? { ...t, ...updates } : t);
       
+      // Recalcular totais do mês
       month.total = month.transactions.filter(t => t.isValid).reduce((sum, t) => sum + t.amount, 0);
       newMonthlyData[monthIndex] = month;
       
+      // Recalcular totais globais
       const totalIncome = newMonthlyData.reduce((sum, m) => sum + m.total, 0);
       const averageIncome = totalIncome / (newMonthlyData.length || 1);
 
@@ -103,6 +106,7 @@ const App: React.FC = () => {
   const exportToExcel = (verification: IncomeVerification) => {
     const wb = XLSX.utils.book_new();
     
+    // Aba de Resumo
     const summaryData = [
       ["APURAÇÃO DE RENDA - " + verification.clientName.toUpperCase()],
       ["Data da Análise", new Date(verification.createdAt).toLocaleString('pt-BR')],
@@ -121,6 +125,7 @@ const App: React.FC = () => {
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
 
+    // Aba de Transações
     const detailedData = [
       ["DATA", "DESCRIÇÃO", "REMETENTE", "BANCO", "VALOR", "MÊS REF"]
     ];
@@ -153,15 +158,17 @@ const App: React.FC = () => {
           <nav className="flex space-x-1 bg-indigo-800/40 p-1 rounded-xl border border-indigo-600/30">
             <button 
               onClick={() => setActiveTab('new')}
-              className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'new' ? 'bg-white text-indigo-700 shadow-md' : 'hover:bg-indigo-600/50 text-indigo-100'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center space-x-2 ${activeTab === 'new' ? 'bg-white text-indigo-700 shadow-md' : 'hover:bg-indigo-600/50 text-indigo-100'}`}
             >
-              Nova Análise
+              <PlusCircle className="w-4 h-4" />
+              <span>Nova Análise</span>
             </button>
             <button 
               onClick={() => setActiveTab('history')}
-              className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-white text-indigo-700 shadow-md' : 'hover:bg-indigo-600/50 text-indigo-100'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-bold transition-all flex items-center space-x-2 ${activeTab === 'history' ? 'bg-white text-indigo-700 shadow-md' : 'hover:bg-indigo-600/50 text-indigo-100'}`}
             >
-              Histórico
+              <History className="w-4 h-4" />
+              <span>Histórico</span>
             </button>
           </nav>
         </div>
@@ -197,7 +204,7 @@ const App: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-gray-600">Pronto para analisar</h3>
                   <p className="max-w-sm mt-2 text-sm text-gray-400">
-                    Carregue um arquivo de extrato ou cole o texto no formulário ao lado para iniciar a apuração automática com IA.
+                    Carregue um arquivo de extrato (.txt) ou cole o texto no formulário ao lado para iniciar a apuração automática com IA.
                   </p>
                 </div>
               )}
