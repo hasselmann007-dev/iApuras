@@ -91,10 +91,9 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onAnalyze, isLoading }) => {
         <div className="pt-2">
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Dados do Extrato</label>
           
-          {/* File Upload Area */}
           <div 
             onClick={() => !fileName && fileInputRef.current?.click()}
-            className={`relative border-2 border-dashed rounded-2xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center ${fileName ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}
+            className={`relative border-2 border-dashed rounded-2xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center mb-3 ${fileName ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'}`}
           >
             <input 
               type="file" 
@@ -121,38 +120,35 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onAnalyze, isLoading }) => {
             ) : (
               <>
                 <Upload className="w-6 h-6 text-gray-400 mb-2" />
-                <span className="text-xs text-gray-500 font-medium">Clique para carregar arquivo local (.txt)</span>
-                <span className="text-[10px] text-gray-400 mt-1">Ou cole o texto abaixo</span>
+                <span className="text-xs text-gray-500 font-medium">Carregar arquivo local (.txt)</span>
               </>
             )}
           </div>
 
-          <div className="mt-3">
-            <textarea 
-              required
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="Cole aqui o texto do extrato bancário..."
-              rows={6}
-              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none font-mono text-xs"
-            />
-          </div>
+          <textarea 
+            required
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Ou cole o texto do extrato aqui..."
+            rows={8}
+            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none font-mono text-xs"
+          />
         </div>
 
         <button 
           type="submit"
           disabled={isLoading || !clientName || !text}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center space-x-2"
+          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center space-x-2"
         >
           {isLoading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Processando...</span>
+              <span>Analisando...</span>
             </>
           ) : (
             <>
               <Send className="w-5 h-5" />
-              <span>Enviar para Apuração</span>
+              <span>Iniciar Apuração</span>
             </>
           )}
         </button>
