@@ -1,5 +1,5 @@
 
 {
   "name": "IncomeAnalyzer Pro",
-  "description": "Aplicação avançada para apuração de renda baseada em extratos bancários (TXT/PDF/Texto), com filtros inteligentes de parentesco, valores mínimos e histórico de apurações com exportação para Excel."
+  "description": "Aplicação avançada para apuração de renda baseada em extratos bancários, com filtros inteligentes, edição de entradas e exportação para planilhas compatíveis com Google Sheets."
 }
