@@ -1,19 +1,15 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
-  History, 
   FileText, 
   Download, 
   Trash2, 
-  Edit3, 
   PlusCircle,
-  ChevronRight,
   AlertCircle,
-  CheckCircle2,
   Loader2
 } from 'lucide-react';
-import { IncomeVerification, MonthlyData, Transaction } from './types';
+import { IncomeVerification, Transaction } from './types';
 import { analyzeIncome } from './services/geminiService';
 import * as XLSX from 'xlsx';
 
@@ -29,19 +25,17 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load history from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('income_verifications');
     if (saved) {
       try {
         setVerifications(JSON.parse(saved));
       } catch (e) {
-        console.error("Failed to load history", e);
+        console.error("Erro ao carregar histórico", e);
       }
     }
   }, []);
 
-  // Save history to localStorage
   useEffect(() => {
     localStorage.setItem('income_verifications', JSON.stringify(verifications));
   }, [verifications]);
@@ -72,14 +66,15 @@ const App: React.FC = () => {
       setCurrentVerification(newVerification);
       setVerifications(prev => [newVerification, ...prev]);
     } catch (err: any) {
-      setError(err.message || "Ocorreu um erro inesperado.");
+      console.error("Erro na análise:", err);
+      setError(err.message || "Ocorreu um erro ao processar os dados. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Tem certeza que deseja excluir esta apuração?")) {
+    if (confirm("Deseja realmente excluir este registro?")) {
       setVerifications(prev => prev.filter(v => v.id !== id));
       if (currentVerification?.id === id) setCurrentVerification(null);
     }
@@ -93,7 +88,6 @@ const App: React.FC = () => {
       const month = { ...newMonthlyData[monthIndex] };
       month.transactions = month.transactions.map(t => t.id === transactionId ? { ...t, ...updates } : t);
       
-      // Recalculate totals
       month.total = month.transactions.filter(t => t.isValid).reduce((sum, t) => sum + t.amount, 0);
       newMonthlyData[monthIndex] = month;
       
@@ -109,16 +103,15 @@ const App: React.FC = () => {
   const exportToExcel = (verification: IncomeVerification) => {
     const wb = XLSX.utils.book_new();
     
-    // Summary Sheet
     const summaryData = [
-      ["Apuração de Renda - " + verification.clientName],
-      ["Data da Apuração", new Date(verification.createdAt).toLocaleDateString('pt-BR')],
+      ["APURAÇÃO DE RENDA - " + verification.clientName.toUpperCase()],
+      ["Data da Análise", new Date(verification.createdAt).toLocaleString('pt-BR')],
       [],
-      ["Resumo Financeiro"],
-      ["Renda Total", verification.totalIncome],
-      ["Média Mensal", verification.averageIncome],
+      ["RESUMO FINANCEIRO"],
+      ["Renda Total Acumulada", verification.totalIncome],
+      ["Média Mensal Apurada", verification.averageIncome],
       [],
-      ["Totais por Mês"]
+      ["DETALHAMENTO MENSAL"]
     ];
     
     verification.monthlyData.forEach(m => {
@@ -128,9 +121,8 @@ const App: React.FC = () => {
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
 
-    // Detailed Transactions Sheet
     const detailedData = [
-      ["Data", "Descrição", "Remetente", "Banco", "Valor", "Mês Referência"]
+      ["DATA", "DESCRIÇÃO", "REMETENTE", "BANCO", "VALOR", "MÊS REF"]
     ];
 
     verification.monthlyData.forEach(m => {
@@ -146,26 +138,28 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="bg-indigo-700 text-white shadow-lg">
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <header className="bg-indigo-700 text-white shadow-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="bg-white p-1.5 rounded-lg">
+          <div className="flex items-center space-x-3">
+            <div className="bg-white p-2 rounded-xl shadow-inner">
               <LayoutDashboard className="text-indigo-700 w-6 h-6" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight">IncomeAnalyzer <span className="font-light opacity-80">Pro</span></h1>
+            <div>
+              <h1 className="text-xl font-black tracking-tight leading-none">IncomeAnalyzer</h1>
+              <span className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-70">Inteligência de Renda</span>
+            </div>
           </div>
-          <nav className="flex space-x-1 bg-indigo-800/50 p-1 rounded-xl">
+          <nav className="flex space-x-1 bg-indigo-800/40 p-1 rounded-xl border border-indigo-600/30">
             <button 
               onClick={() => setActiveTab('new')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'new' ? 'bg-white text-indigo-700 shadow-sm' : 'hover:bg-indigo-600/50'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'new' ? 'bg-white text-indigo-700 shadow-md' : 'hover:bg-indigo-600/50 text-indigo-100'}`}
             >
-              Nova Apuração
+              Nova Análise
             </button>
             <button 
               onClick={() => setActiveTab('history')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'history' ? 'bg-white text-indigo-700 shadow-sm' : 'hover:bg-indigo-600/50'}`}
+              className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'history' ? 'bg-white text-indigo-700 shadow-md' : 'hover:bg-indigo-600/50 text-indigo-100'}`}
             >
               Histórico
             </button>
@@ -173,16 +167,18 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-8">
         {activeTab === 'new' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-4">
               <IncomeForm onAnalyze={handleAnalyze} isLoading={isLoading} />
               {error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start space-x-3 text-red-700">
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start space-x-3 text-red-700 animate-in fade-in zoom-in duration-300">
                   <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                  <p className="text-sm">{error}</p>
+                  <div>
+                    <p className="text-sm font-bold">Erro na Apuração</p>
+                    <p className="text-xs opacity-80">{error}</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -195,12 +191,14 @@ const App: React.FC = () => {
                   onDelete={() => handleDelete(currentVerification.id)}
                 />
               ) : (
-                <div className="h-full min-h-[400px] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center text-gray-400 p-8 text-center">
-                  <div className="bg-gray-100 p-4 rounded-full mb-4">
-                    <FileText className="w-12 h-12" />
+                <div className="h-full min-h-[500px] border-2 border-dashed border-gray-200 rounded-[2.5rem] flex flex-col items-center justify-center text-gray-400 p-12 text-center bg-white/50">
+                  <div className="bg-white p-6 rounded-full shadow-sm mb-6 border border-gray-100">
+                    <FileText className="w-16 h-16 text-indigo-100" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-600">Nenhuma apuração ativa</h3>
-                  <p className="max-w-xs mt-2">Preencha os dados ao lado e envie o extrato para iniciar a análise automática.</p>
+                  <h3 className="text-xl font-bold text-gray-600">Pronto para analisar</h3>
+                  <p className="max-w-sm mt-2 text-sm text-gray-400">
+                    Carregue um arquivo de extrato ou cole o texto no formulário ao lado para iniciar a apuração automática com IA.
+                  </p>
                 </div>
               )}
             </div>
@@ -215,10 +213,14 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
-          &copy; 2025 IncomeAnalyzer Pro - Sistema de Apuração de Renda Inteligente
+      <footer className="bg-white border-t border-gray-100 py-8">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-gray-400 text-xs font-medium">
+          <p>&copy; 2025 IncomeAnalyzer Pro - Sistema de Apuração de Renda Inteligente</p>
+          <div className="flex space-x-6 mt-4 md:mt-0">
+            <span>Privacidade</span>
+            <span>Termos de Uso</span>
+            <span>Suporte</span>
+          </div>
         </div>
       </footer>
     </div>
